@@ -1,281 +1,452 @@
-// ============================================================
-// CMP1002 - Lab: Encapsulation and Invariants
-// Student Version - MainProgram.cpp
-// ============================================================
-// Instructions:
-//   Complete all TODO sections below.
-//   Do NOT modify function signatures or class interfaces.
-//   All logic must remain in this single file.
-// ============================================================
+// ============================================================================
 
+// Lab: Destructors, Copy Constructors, and Default Memberwise Assignment
+
+// Course: Object-Oriented Programming for Engineers
+
+// File: MainProgram.cpp (Student Version)
+
+// ============================================================================
+
+// INSTRUCTIONS:
+
+//    - Implement all functions marked with TODO
+
+//    - Do NOT change function signatures
+
+//    - Do NOT add extra #include directives
+
+//    - All code must remain in this single file
+
+// ============================================================================
+ 
 #include <iostream>
+
+#include <cstring>
+
 #include <string>
-#include <stdexcept>
-#include <vector>
-
+ 
 using namespace std;
+ 
+// ============================================================================
 
-// ================================
-// CLASS DEFINITIONS
-// ================================
+// GLOBAL TRACKING VARIABLES
 
-// --------------------------------------------------
-// Class: Temperature
-// Represents a temperature in Celsius.
-// Invariant: temperature must be >= -273.15 (absolute zero)
-// --------------------------------------------------
-class Temperature {
-private:
-    double celsius_;
+// ============================================================================
 
-public:
-    // Constructor: initialize with a Celsius value.
-    // Must enforce the invariant.
-    // Throw std::invalid_argument if value < -273.15
-    explicit Temperature(double celsius) {
-        // TODO: Validate and set celsius_
-        if (celsius < -273.15){
-            throw invalid_argument("Temperature cannot be below absoulte zero.");
-        }
-        celsius_ = celsius;
-    }
+// These counters help tests verify that your special member functions are
 
-    // Getter: return the temperature in Celsius
-    double getCelsius() const {
-        // TODO: Implement
-        return celsius_;
-    }
+// actually being called. Increment them at the START of each function body.
+ 
+int g_constructorCount    = 0;
 
-    // Getter: return the temperature converted to Fahrenheit
-    // Formula: F = C * 9/5 + 32
-    double getFahrenheit() const {
-        // TODO: Implement
-        return celsius_ * 9.0/5.0 + 32.0;
-    }
+int g_destructorCount     = 0;
 
-    // Setter: update the temperature in Celsius
-    // Must enforce the invariant.
-    // Throw std::invalid_argument if value < -273.15
-    void setCelsius(double celsius) {
-        // TODO: Implement
-        if (celsius < -273.15){
-            throw invalid_argument("Temperature cannot be below absoulte zero.");
-        }
-        celsius_ = celsius;
-    }
-};
+int g_copyConstructorCount = 0;
 
-// --------------------------------------------------
-// Class: BankAccount
-// Represents a simple bank account.
-// Invariants:
-//   - balance must never be negative
-//   - owner name must not be empty
-// --------------------------------------------------
-class BankAccount {
-private:
-    string owner_;
-    double balance_;
+int g_assignmentCount     = 0;
+ 
+// Helper functions to read/reset counters (DO NOT MODIFY)
 
-public:
-    // Constructor: initialize with owner name and starting balance.
-    // Throw std::invalid_argument if owner is empty or balance < 0
-    BankAccount(const string& owner, double initialBalance) {
-        // TODO: Validate and set members .empty()
-        if( owner.empty()){
-            throw invalid_argument("Owner name cannot be empty.");
-        }
-        if(initialBalance < 0){
-            throw invalid_argument("Initial balance cannot be negative.");
-        }
-        owner_ = owner;
-        balance_ = initialBalance;
-        
-    }
+int getConstructorCount()     { return g_constructorCount; }
 
-    // Getter: return the owner's name
-    string getOwner() const {
-        // TODO: Implement
-        return owner_;
-    }
+int getDestructorCount()      { return g_destructorCount; }
 
-    // Getter: return the current balance
-    double getBalance() const {
-        // TODO: Implement
-        return balance_;
-    }
+int getCopyConstructorCount() { return g_copyConstructorCount; }
 
-    // Deposit money into the account.
-    // Throw std::invalid_argument if amount <= 0
-    void deposit(double amount) {
-        // TODO: Implement
-        if(amount <= 0){
-            throw invalid_argument("Deposit amount must be positive");
-        }
-        balance_ +=amount;
-    }
+int getAssignmentCount()      { return g_assignmentCount; }
 
-    // Withdraw money from the account.
-    // Throw std::invalid_argument if amount <= 0
-    // Throw std::runtime_error if insufficient funds
-    void withdraw(double amount) {
-        // TODO: Implement
-        if(amount <= 0){
-            throw invalid_argument("Withdrawal amount must be positive");
-        }
-        if(amount > balance_){
-            throw runtime_error("Insufficient funds");
-        }
-        balance_ -= amount;
-    }
+void resetAllCounters() {
 
-    // Transfer money from this account to another.
-    // Throw std::invalid_argument if amount <= 0
-    // Throw std::runtime_error if insufficient funds
-    void transfer(BankAccount& other, double amount) {
-        // TODO: Implement using withdraw() and deposit()
-        if (amount <= 0){
-            throw invalid_argument("Transfer amount must be positive");
-        }
-        withdraw(amount);
-        other.deposit(amount);
-    }
-};
+    g_constructorCount     = 0;
 
-// --------------------------------------------------
-// Class: Password
-// Represents a password with strength rules.
-// Invariants:
-//   - password length must be >= 8
-//   - password must contain at least one digit
-// --------------------------------------------------
-class Password {
-private:
-    string password_;
+    g_destructorCount      = 0;
 
-    // Helper: check if a string contains at least one digit
-    static bool hasDigit(const string& s) {
-        // TODO: Implement
-        for (char c : s ){
-            if (c >= '0' && c <= '9'){
-                return true;
-            }
-        }
-        return false;
-    }
+    g_copyConstructorCount = 0;
 
-    // Helper: validate password against all rules
-    static void validate(const string& pwd) {
-        // TODO: Check length >= 8 and hasDigit
-        // Throw std::invalid_argument with descriptive message if invalid
-        if (pwd.length() < 8 ){
-            throw invalid_argument("password must be atleast 8 characters long");
-        }
-        if(!hasDigit(pwd)){
-            throw invalid_argument("Password must contain at least one digit");
-        }
-    }
+    g_assignmentCount      = 0;
 
-public:
-    // Constructor: create a password.
-    // Must pass validation.
-    explicit Password(const string& pwd) {
-        // TODO: Validate and set password_
-        validate(pwd);
-        password_ = pwd;
-    }
-
-    // Change password: old password must match, new must be valid.
-    // Throw std::invalid_argument if oldPassword doesn't match
-    // Throw std::invalid_argument if newPassword fails validation
-    void change(const string& oldPassword, const string& newPassword) {
-        // TODO: Implement
-        if (oldPassword != password_){
-            throw invalid_argument("oldPassword doesn't match");
-        }
-        validate(newPassword);
-        password_ = newPassword;
-    }
-
-    // Check if a given string matches the stored password.
-    bool matches(const string& attempt) const {
-        // TODO: Implement
-        return attempt == password_;
-    }
-
-    // Return the length of the password (safe to expose)
-    size_t getLength() const {
-        // TODO: Implement
-        return password_.length();
-    }
-
-    // NOTE: There is deliberately NO getPassword() method.
-    // Exposing the raw password would break encapsulation.
-};
-
-
-// ================================
-// MAIN FUNCTION
-// ================================
-int main() {
-    cout << "=== Encapsulation and Invariants Lab ===" << endl;
-    cout << endl;
-
-    // --- Temperature Demo ---
-    cout << "--- Temperature ---" << endl;
-    try {
-        Temperature t(100.0);
-        cout << "Celsius: " << t.getCelsius() << endl;
-        cout << "Fahrenheit: " << t.getFahrenheit() << endl;
-        t.setCelsius(-40.0);
-        cout << "Updated Celsius: " << t.getCelsius() << endl;
-        cout << "Updated Fahrenheit: " << t.getFahrenheit() << endl;
-    } catch (const exception& e) {
-        cout << "Error: " << e.what() << endl;
-    }
-
-    // Try invalid temperature
-    try {
-        Temperature bad(-300.0);
-        cout << "This should not print!" << endl;
-    } catch (const invalid_argument& e) {
-        cout << "Caught expected error: " << e.what() << endl;
-    }
-    cout << endl;
-
-    // --- BankAccount Demo ---
-    cout << "--- BankAccount ---" << endl;
-    try {
-        BankAccount alice("Alice", 1000.0);
-        BankAccount bob("Bob", 500.0);
-        cout << alice.getOwner() << " balance: " << alice.getBalance() << endl;
-
-        alice.deposit(200.0);
-        cout << "After deposit: " << alice.getBalance() << endl;
-
-        alice.transfer(bob, 300.0);
-        cout << "After transfer:" << endl;
-        cout << "  Alice: " << alice.getBalance() << endl;
-        cout << "  Bob:   " << bob.getBalance() << endl;
-    } catch (const exception& e) {
-        cout << "Error: " << e.what() << endl;
-    }
-    cout << endl;
-
-    // --- Password Demo ---
-    cout << "--- Password ---" << endl;
-    try {
-        Password pw("Secure99");
-        cout << "Password length: " << pw.getLength() << endl;
-        cout << "Matches 'wrong': " << pw.matches("wrong") << endl;
-        cout << "Matches 'Secure99': " << pw.matches("Secure99") << endl;
-        pw.change("Secure99", "NewPass1");
-        cout << "Password changed successfully." << endl;
-    } catch (const exception& e) {
-        cout << "Error: " << e.what() << endl;
-    }
-
-    cout << endl;
-    cout << "=== Lab Complete ===" << endl;
-    return 0;
 }
+ 
+// ============================================================================
+
+// CLASS DEFINITION: DynamicBuffer
+
+// ============================================================================
+
+// This class manages a dynamically allocated C-string (char array).
+
+// It demonstrates the "Rule of Three": if a class manages a resource,
+
+// you must define a destructor, copy constructor, and copy assignment operator.
+
+// ============================================================================
+ 
+class DynamicBuffer {
+
+private:
+
+    char* m_data;     // pointer to dynamically allocated C-string
+
+    int   m_length;   // length of the string (excluding '\0')
+ 
+public:
+
+    // --------------------------------------------------
+
+    // Parameterized Constructor
+
+    // --------------------------------------------------
+
+    // - Allocate memory for a copy of the input string
+
+    // - Copy the string content into m_data
+
+    // - Set m_length to the length of the string
+
+    // - Increment g_constructorCount
+
+    DynamicBuffer(const char* input) {
+
+        // TODO: Implement constructor
+
+        //    1. Increment g_constructorCount
+
+        g_constructorCount++;
+
+        //    2. Calculate length of input using strlen()
+
+        m_length = strlen(input);
+
+        //    3. Allocate m_data with new char[m_length + 1]
+
+        m_data = new char[m_length + 1];
+
+        //    4. Copy input into m_data using strcpy()
+
+        strcpy(m_data, input);
+
+    }
+ 
+    // --------------------------------------------------
+
+    // Destructor
+
+    // --------------------------------------------------
+
+    // - Free the dynamically allocated memory
+
+    // - Increment g_destructorCount
+
+    ~DynamicBuffer() {
+
+        // TODO: Implement destructor
+
+        //    1. Increment g_destructorCount
+
+        g_destructorCount++;
+
+        //    2. Delete the dynamically allocated array (delete[])
+
+        delete[] m_data;
+
+    }
+ 
+    // --------------------------------------------------
+
+    // Copy Constructor (Deep Copy)
+
+    // --------------------------------------------------
+
+    // - Allocate NEW memory for this object
+
+    // - Copy the content from 'other' into the new memory
+
+    // - Increment g_copyConstructorCount
+
+    DynamicBuffer(const DynamicBuffer& other) {
+
+        // TODO: Implement copy constructor
+
+        //    1. Increment g_copyConstructorCount
+
+        g_copyConstructorCount++;
+
+        //    2. Copy m_length from other
+
+        m_length = other.m_length;
+
+        //    3. Allocate new memory: new char[m_length + 1]
+
+        m_data = new char[m_length + 1];
+
+        //    4. Copy string data using strcpy()
+
+        strcpy(m_data, other.m_data);
+
+    }
+ 
+    // --------------------------------------------------
+
+    // Copy Assignment Operator (Deep Copy)
+
+    // --------------------------------------------------
+
+    // - Check for self-assignment
+
+    // - Free existing memory
+
+    // - Allocate new memory and copy content from 'other'
+
+    // - Increment g_assignmentCount
+
+    // - Return *this
+
+    DynamicBuffer& operator=(const DynamicBuffer& other) {
+
+        // TODO: Implement copy assignment operator
+
+        //    1. Increment g_assignmentCount
+
+        g_assignmentCount++;
+
+        //    2. Check for self-assignment (if this == &other)
+
+        if (this != &other) {
+
+            //    3. Delete old m_data (delete[])
+
+            delete[] m_data;
+
+            //    4. Copy m_length from other
+
+            m_length = other.m_length;
+
+            //    5. Allocate new memory: new char[m_length + 1]
+
+            m_data = new char[m_length + 1];
+
+            //    6. Copy string data using strcpy()
+
+            strcpy(m_data, other.m_data);
+
+        }
+
+        //    7. Return *this
+
+        return *this;
+
+    }
+ 
+    // --------------------------------------------------
+
+    // Accessors (DO NOT MODIFY)
+
+    // --------------------------------------------------
+
+    const char* getData() const { return m_data; }
+
+    int getLength() const { return m_length; }
+ 
+    // --------------------------------------------------
+
+    // setData - replace the buffer with a new string
+
+    // --------------------------------------------------
+
+    // - Free old memory
+
+    // - Allocate new memory for the new string
+
+    // - Copy the new string
+
+    void setData(const char* newData) {
+
+        // TODO: Implement setData
+
+        //    1. Delete old m_data (delete[])
+
+        delete[] m_data;
+
+        //    2. Calculate new length with strlen()
+
+        m_length = strlen(newData);
+
+        //    3. Allocate new memory: new char[m_length + 1]
+
+        m_data = new char[m_length + 1];
+
+        //    4. Copy newData into m_data using strcpy()
+
+        strcpy(m_data, newData);
+
+    }
+ 
+    // --------------------------------------------------
+
+    // print - display the buffer content (DO NOT MODIFY)
+
+    // --------------------------------------------------
+
+    void print() const {
+
+        cout << "DynamicBuffer[\"" << m_data << "\", length=" << m_length << "]" << endl;
+
+    }
+
+};
+ 
+// ============================================================================
+
+// FREE FUNCTION: createBufferCopy
+
+// ============================================================================
+
+// This function takes a DynamicBuffer BY VALUE (triggers copy constructor)
+
+// and returns it BY VALUE (may trigger copy or move).
+
+// DO NOT MODIFY this function.
+ 
+DynamicBuffer createBufferCopy(DynamicBuffer buf) {
+
+    return buf;
+
+}
+ 
+// ============================================================================
+
+// MAIN FUNCTION
+
+// ============================================================================
+
+int main() {
+
+    cout << "=== Destructors, Copy Constructors & Assignment Lab ===" << endl;
+
+    cout << endl;
+ 
+    // --- Part 1: Constructor & Destructor ---
+
+    cout << "--- Part 1: Constructor & Destructor ---" << endl;
+
+    {
+
+        DynamicBuffer b1("Hello");
+
+        b1.print();
+
+        cout << "b1 created. Constructor count: " << getConstructorCount() << endl;
+
+    }
+
+    cout << "b1 destroyed. Destructor count: " << getDestructorCount() << endl;
+
+    cout << endl;
+ 
+    resetAllCounters();
+ 
+    // --- Part 2: Copy Constructor ---
+
+    cout << "--- Part 2: Copy Constructor ---" << endl;
+
+    {
+
+        DynamicBuffer original("Deep Copy Test");
+
+        DynamicBuffer copied(original);  // copy constructor called
+ 
+        cout << "Original: ";
+
+        original.print();
+
+        cout << "Copied:   ";
+
+        copied.print();
+
+        cout << "Copy constructor count: " << getCopyConstructorCount() << endl;
+ 
+        // Modify original - copied should NOT change (deep copy)
+
+        original.setData("Modified Original");
+
+        cout << "After modifying original:" << endl;
+
+        cout << "Original: ";
+
+        original.print();
+
+        cout << "Copied:   ";
+
+        copied.print();
+
+    }
+
+    cout << endl;
+ 
+    resetAllCounters();
+ 
+    // --- Part 3: Assignment Operator ---
+
+    cout << "--- Part 3: Assignment Operator ---" << endl;
+
+    {
+
+        DynamicBuffer a("Alpha");
+
+        DynamicBuffer b("Beta");
+ 
+        cout << "Before assignment:" << endl;
+
+        cout << "a: "; a.print();
+
+        cout << "b: "; b.print();
+ 
+        b = a;  // assignment operator called
+
+        cout << "After b = a:" << endl;
+
+        cout << "a: "; a.print();
+
+        cout << "b: "; b.print();
+
+        cout << "Assignment count: " << getAssignmentCount() << endl;
+ 
+        // Modify a - b should NOT change
+
+        a.setData("Changed A");
+
+        cout << "After modifying a:" << endl;
+
+        cout << "a: "; a.print();
+
+        cout << "b: "; b.print();
+
+    }
+
+    cout << endl;
+ 
+    // --- Part 4: Self-Assignment Safety ---
+
+    cout << "--- Part 4: Self-Assignment ---" << endl;
+
+    {
+
+        DynamicBuffer s("SelfTest");
+
+        s = s;  // self-assignment - must not crash
+
+        cout << "After self-assignment: ";
+
+        s.print();
+
+    }
+
+    cout << endl;
+ 
+    cout << "=== Lab Complete ===" << endl;
+ 
+    return 0;
+
+}
+ 
